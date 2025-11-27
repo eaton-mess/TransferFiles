@@ -1,0 +1,223 @@
+Perfect — this is exactly the sheet we need to work from.
+From this structure, Power BI can absolutely produce everything, but we need to reshape this in Power Query first.
+
+Let me walk you through the transformation.
+
+
+---
+
+✅ 1. Your raw data structure (what I can see)
+
+Each row appears to represent one participant’s evaluation, with these columns:
+
+Columns before Q1:
+
+Date of Course
+
+Course Name
+
+Function / BU
+
+Experience Level (B / E / I)
+
+(Possibly participant ID)
+
+
+Columns Q1–Q12+:
+
+Simple numeric ratings (1 to 5)
+
+This is exactly what Power BI needs.
+
+
+---
+
+⭐ 2. The key transformation: UNPIVOT the Q1–Q12 columns
+
+Right now the questions are in columns.
+
+Power BI requires them in rows, like this:
+
+Date	Course	Function	Experience	Question	Score
+
+01/10/2025	PFTC	Finance	B	Q1	3
+01/10/2025	PFTC	Finance	B	Q2	4
+...	...	...	...	...	...
+
+
+So we unpivot all score columns.
+
+
+---
+
+🏗 3. Your actual Power Query steps (I’ll give you the full code)
+
+After you import the Excel file in Power BI → Transform Data → Select the sheet → then apply this.
+
+Here’s the ready-to-paste M code (Power Query):
+
+let
+    Source = Excel.Workbook(File.Contents("C:\YourPath\Feedback.xlsx"), null, true),
+    Sheet = Source{[Item="2025 Mock data", Kind="Sheet"]}[Data],
+    PromotedHeaders = Table.PromoteHeaders(Sheet, [PromoteAllScalars=true]),
+
+    // Identify non-score columns (the first ones)
+    NonScoreColumns = {"Date of Course", "Course Name", "FunctionBU", "Experience Level"},
+
+    // All other columns (Q1, Q2, Q3, ... Qn)
+    ScoreColumns = List.Difference(Table.ColumnNames(PromotedHeaders), NonScoreColumns),
+
+    // Unpivot Q columns
+    Unpivoted = Table.Unpivot(PromotedHeaders, ScoreColumns, "Question", "Score"),
+
+    // Convert data types
+    ChangedTypes = Table.TransformColumnTypes(Unpivoted,{
+        {"Date of Course", type date},
+        {"Course Name", type text},
+        {"FunctionBU", type text},
+        {"Experience Level", type text},
+        {"Question", type text},
+        {"Score", Int64.Type}
+    })
+
+in
+    ChangedTypes
+
+🎉 After this, you will have the perfect clean data model.
+
+
+---
+
+🎯 4. How Power BI will automatically handle your metrics
+
+Because each question is now tagged as “Q1”, “Q2”, etc., we can map:
+
+Metric Groups
+
+Metric	Included Questions
+
+Learning Design & Flow	Q1–Q3
+Content Accuracy	Q4
+Participant Engagement	Q5
+Learning Tools & Resources	Q6
+Delivery & Facilitation	Q7–Q10
+Applicability to Role	Q11
+Guided Tours / Demos	Q12–Q13?
+Course Environment	Q14
+
+
+(You confirm the mapping, and I write you the DAX.)
+
+
+---
+
+🔢 5. DAX Measures you’ll need:
+
+Average Score
+
+Avg Score = AVERAGE(Feedback[Score])
+
+Metric Average (example — Learning Design & Flow)
+
+Avg_LDF =
+AVERAGEX(
+    FILTER(Feedback, Feedback[Question] IN {"Q1","Q2","Q3"}),
+    Feedback[Score]
+)
+
+Flag low scores
+
+Low Score Flag =
+IF([Avg Score] < 3, "⚠ Below Target", "OK")
+
+Experience Level filter works automatically
+
+(Because it's a column in the data model)
+
+
+---
+
+📊 6. What visuals you can now create
+
+✔ Course Score Summary (Matrix)
+
+Rows: Metric
+Columns: Course
+Values: Avg Score
+
+✔ Low Score Alerts (Conditional Formatting)
+
+Highlight <3
+
+✔ Course Comparison Radar Chart
+
+By metric
+
+✔ Trend Over Time
+
+Avg score by date
+
+✔ Heatmap
+
+Exactly like Excel
+
+
+---
+
+🎯 Final things I need from you (2 small confirmations)
+
+1️⃣ What are the EXACT metric groupings?
+
+For example:
+
+Learning Design & Flow = Q1–Q3
+
+Delivery & Facilitation = Q7–Q10
+
+Guided Tours & Demos = Q12–Q13
+
+etc.
+
+
+Tell me this and I will write all DAX.
+
+
+---
+
+2️⃣ Confirm the names of the non-score columns
+
+From your screenshot I think they are:
+
+Date of Course
+
+Course Name
+
+Function/BU
+
+Experience Level
+
+
+If any names differ, tell me and I’ll adjust the script.
+
+
+---
+
+🌟 Once you confirm these two things, I will:
+
+✔ Give you the final Power Query script
+✔ Create all DAX measures
+✔ Give you the recommended dashboard layout
+✔ Provide step-by-step instructions in Power BI
+
+You're VERY close — the raw data is perfect, we just need to unpivot and map the questions.
+
+
+---
+
+Reply with:
+
+✔ Metric groupings
+
+✔ Exact column names for Date, Course, BU, Experience
+
+And I’ll finish the entire Power BI build for you.
